@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Class WordPress\Plugin_Check\Admin\Admin_AJAX
  *
@@ -19,7 +20,8 @@ use WP_Error;
  *
  * @since 1.0.0
  */
-final class Admin_AJAX {
+final class Admin_AJAX
+{
 
 	/**
 	 * Nonce key.
@@ -66,11 +68,12 @@ final class Admin_AJAX {
 	 *
 	 * @since 1.0.0
 	 */
-	public function add_hooks() {
-		add_action( 'wp_ajax_' . self::ACTION_CLEAN_UP_ENVIRONMENT, array( $this, 'clean_up_environment' ) );
-		add_action( 'wp_ajax_' . self::ACTION_SET_UP_ENVIRONMENT, array( $this, 'set_up_environment' ) );
-		add_action( 'wp_ajax_' . self::ACTION_GET_CHECKS_TO_RUN, array( $this, 'get_checks_to_run' ) );
-		add_action( 'wp_ajax_' . self::ACTION_RUN_CHECKS, array( $this, 'run_checks' ) );
+	public function add_hooks()
+	{
+		add_action('wp_ajax_' . self::ACTION_CLEAN_UP_ENVIRONMENT, array($this, 'clean_up_environment'));
+		add_action('wp_ajax_' . self::ACTION_SET_UP_ENVIRONMENT, array($this, 'set_up_environment'));
+		add_action('wp_ajax_' . self::ACTION_GET_CHECKS_TO_RUN, array($this, 'get_checks_to_run'));
+		add_action('wp_ajax_' . self::ACTION_RUN_CHECKS, array($this, 'run_checks'));
 	}
 
 	/**
@@ -78,8 +81,9 @@ final class Admin_AJAX {
 	 *
 	 * @since 1.0.0
 	 */
-	public function get_nonce() {
-		return wp_create_nonce( self::NONCE_KEY );
+	public function get_nonce()
+	{
+		return wp_create_nonce(self::NONCE_KEY);
 	}
 
 	/**
@@ -87,49 +91,52 @@ final class Admin_AJAX {
 	 *
 	 * @since 1.0.0
 	 */
-	public function set_up_environment() {
+	public function set_up_environment()
+	{
 		// Verify the nonce before continuing.
-		$valid_request = $this->verify_request( filter_input( INPUT_POST, 'nonce', FILTER_SANITIZE_FULL_SPECIAL_CHARS ) );
+		$valid_request = $this->verify_request(filter_input(INPUT_POST, 'nonce', FILTER_SANITIZE_FULL_SPECIAL_CHARS));
 
-		if ( is_wp_error( $valid_request ) ) {
-			wp_send_json_error( $valid_request, 403 );
+		if (is_wp_error($valid_request)) {
+			wp_send_json_error($valid_request, 403);
 		}
 		$runner = Plugin_Request_Utility::get_runner();
 
-		if ( is_null( $runner ) ) {
+		if (is_null($runner)) {
 			$runner = new AJAX_Runner();
 		}
 
 		// Make sure we are using the correct runner instance.
-		if ( ! ( $runner instanceof AJAX_Runner ) ) {
+		if (! ($runner instanceof AJAX_Runner)) {
 			wp_send_json_error(
-				new WP_Error( 'invalid-runner', __( 'AJAX Runner was not initialized correctly.', 'plugin-check' ) ),
+				new WP_Error('invalid-runner', __('AJAX Runner was not initialized correctly.', 'plugin-check')),
 				500
 			);
 		}
 
-		$checks = filter_input( INPUT_POST, 'checks', FILTER_DEFAULT, FILTER_FORCE_ARRAY );
-		$checks = is_null( $checks ) ? array() : $checks;
-		$plugin = filter_input( INPUT_POST, 'plugin', FILTER_SANITIZE_FULL_SPECIAL_CHARS );
+		$checks = filter_input(INPUT_POST, 'checks', FILTER_DEFAULT, FILTER_FORCE_ARRAY);
+		$checks = is_null($checks) ? array() : $checks;
+		$plugin = filter_input(INPUT_POST, 'plugin', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+		$debug = filter_input(INPUT_POST, 'debug', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
 
 		try {
-			$runner->set_check_slugs( $checks );
-			$runner->set_plugin( $plugin );
+			$runner->set_check_slugs($checks);
+			$runner->set_debug($debug);
+			$runner->set_plugin($plugin);
 
 			$checks_to_run = $runner->get_checks_to_run();
-		} catch ( Exception $error ) {
+		} catch (Exception $error) {
 			wp_send_json_error(
-				new WP_Error( 'invalid-request', $error->getMessage() ),
+				new WP_Error('invalid-request', $error->getMessage()),
 				400
 			);
 		}
 
-		$message = __( 'No runtime checks, runtime environment was not setup.', 'plugin-check' );
+		$message = __('No runtime checks, runtime environment was not setup.', 'plugin-check');
 
-		if ( $this->has_runtime_check( $checks_to_run ) ) {
+		if ($this->has_runtime_check($checks_to_run)) {
 			$runtime = new Runtime_Environment_Setup();
 			$runtime->set_up();
-			$message = __( 'Runtime environment setup successful.', 'plugin-check' );
+			$message = __('Runtime environment setup successful.', 'plugin-check');
 		}
 
 		wp_send_json_success(
@@ -149,30 +156,31 @@ final class Admin_AJAX {
 	 * @global wpdb   $wpdb         WordPress database abstraction object.
 	 * @global string $table_prefix The database table prefix.
 	 */
-	public function clean_up_environment() {
+	public function clean_up_environment()
+	{
 		global $wpdb, $table_prefix;
 
 		// Verify the nonce before continuing.
-		$valid_request = $this->verify_request( filter_input( INPUT_POST, 'nonce', FILTER_SANITIZE_FULL_SPECIAL_CHARS ) );
+		$valid_request = $this->verify_request(filter_input(INPUT_POST, 'nonce', FILTER_SANITIZE_FULL_SPECIAL_CHARS));
 
-		if ( is_wp_error( $valid_request ) ) {
-			wp_send_json_error( $valid_request, 403 );
+		if (is_wp_error($valid_request)) {
+			wp_send_json_error($valid_request, 403);
 		}
 
 		// Set the new prefix.
-		$old_prefix = $wpdb->set_prefix( $table_prefix . 'pc_' );
+		$old_prefix = $wpdb->set_prefix($table_prefix . 'pc_');
 
-		$message = __( 'Runtime environment was not prepared, cleanup was not run.', 'plugin-check' );
+		$message = __('Runtime environment was not prepared, cleanup was not run.', 'plugin-check');
 
 		// Test if the runtime environment tables exist.
-		if ( $wpdb->posts === $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->posts ) ) || defined( 'WP_PLUGIN_CHECK_OBJECT_CACHE_DROPIN_VERSION' ) ) {
+		if ($wpdb->posts === $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $wpdb->posts)) || defined('WP_PLUGIN_CHECK_OBJECT_CACHE_DROPIN_VERSION')) {
 			$runtime = new Runtime_Environment_Setup();
 			$runtime->clean_up();
-			$message = __( 'Runtime environment cleanup successful.', 'plugin-check' );
+			$message = __('Runtime environment cleanup successful.', 'plugin-check');
 		}
 
 		// Restore the old prefix.
-		$wpdb->set_prefix( $old_prefix );
+		$wpdb->set_prefix($old_prefix);
 
 		wp_send_json_success(
 			array(
@@ -186,43 +194,44 @@ final class Admin_AJAX {
 	 *
 	 * @since 1.0.0
 	 */
-	public function get_checks_to_run() {
+	public function get_checks_to_run()
+	{
 		// Verify the nonce before continuing.
-		$valid_request = $this->verify_request( filter_input( INPUT_POST, 'nonce', FILTER_SANITIZE_FULL_SPECIAL_CHARS ) );
+		$valid_request = $this->verify_request(filter_input(INPUT_POST, 'nonce', FILTER_SANITIZE_FULL_SPECIAL_CHARS));
 
-		if ( is_wp_error( $valid_request ) ) {
-			wp_send_json_error( $valid_request, 403 );
+		if (is_wp_error($valid_request)) {
+			wp_send_json_error($valid_request, 403);
 		}
 
-		$categories = filter_input( INPUT_POST, 'categories', FILTER_DEFAULT, FILTER_FORCE_ARRAY );
-		$categories = is_null( $categories ) ? array() : $categories;
-		$checks     = filter_input( INPUT_POST, 'checks', FILTER_DEFAULT, FILTER_FORCE_ARRAY );
-		$checks     = is_null( $checks ) ? array() : $checks;
-		$plugin     = filter_input( INPUT_POST, 'plugin', FILTER_SANITIZE_FULL_SPECIAL_CHARS );
+		$categories = filter_input(INPUT_POST, 'categories', FILTER_DEFAULT, FILTER_FORCE_ARRAY);
+		$categories = is_null($categories) ? array() : $categories;
+		$checks     = filter_input(INPUT_POST, 'checks', FILTER_DEFAULT, FILTER_FORCE_ARRAY);
+		$checks     = is_null($checks) ? array() : $checks;
+		$plugin     = filter_input(INPUT_POST, 'plugin', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
 		$runner     = Plugin_Request_Utility::get_runner();
 
-		if ( is_null( $runner ) ) {
+		if (is_null($runner)) {
 			$runner = new AJAX_Runner();
 		}
 
 		// Make sure we are using the correct runner instance.
-		if ( ! ( $runner instanceof AJAX_Runner ) ) {
+		if (! ($runner instanceof AJAX_Runner)) {
 			wp_send_json_error(
-				new WP_Error( 'invalid-runner', __( 'AJAX Runner was not initialized correctly.', 'plugin-check' ) ),
+				new WP_Error('invalid-runner', __('AJAX Runner was not initialized correctly.', 'plugin-check')),
 				403
 			);
 		}
 
 		try {
-			$runner->set_check_slugs( $checks );
-			$runner->set_plugin( $plugin );
-			$runner->set_categories( $categories );
+			$runner->set_check_slugs($checks);
+			$runner->set_plugin($plugin);
+			$runner->set_categories($categories);
 
 			$plugin_basename = $runner->get_plugin_basename();
 			$checks_to_run   = $runner->get_checks_to_run();
-		} catch ( Exception $error ) {
+		} catch (Exception $error) {
 			wp_send_json_error(
-				new WP_Error( 'invalid-checks', $error->getMessage() ),
+				new WP_Error('invalid-checks', $error->getMessage()),
 				403
 			);
 		}
@@ -230,7 +239,7 @@ final class Admin_AJAX {
 		wp_send_json_success(
 			array(
 				'plugin' => $plugin_basename,
-				'checks' => array_keys( $checks_to_run ),
+				'checks' => array_keys($checks_to_run),
 			)
 		);
 	}
@@ -240,46 +249,49 @@ final class Admin_AJAX {
 	 *
 	 * @since 1.0.0
 	 */
-	public function run_checks() {
+	public function run_checks()
+	{
 		// Verify the nonce before continuing.
-		$valid_request = $this->verify_request( filter_input( INPUT_POST, 'nonce', FILTER_SANITIZE_FULL_SPECIAL_CHARS ) );
+		$valid_request = $this->verify_request(filter_input(INPUT_POST, 'nonce', FILTER_SANITIZE_FULL_SPECIAL_CHARS));
 
-		if ( is_wp_error( $valid_request ) ) {
-			wp_send_json_error( $valid_request, 403 );
+		if (is_wp_error($valid_request)) {
+			wp_send_json_error($valid_request, 403);
 		}
 
 		$runner = Plugin_Request_Utility::get_runner();
 
-		if ( is_null( $runner ) ) {
+		if (is_null($runner)) {
 			$runner = new AJAX_Runner();
 		}
 
 		// Make sure we are using the correct runner instance.
-		if ( ! ( $runner instanceof AJAX_Runner ) ) {
+		if (! ($runner instanceof AJAX_Runner)) {
 			wp_send_json_error(
-				new WP_Error( 'invalid-runner', __( 'AJAX Runner was not initialized correctly.', 'plugin-check' ) ),
+				new WP_Error('invalid-runner', __('AJAX Runner was not initialized correctly.', 'plugin-check')),
 				500
 			);
 		}
 
-		$checks = filter_input( INPUT_POST, 'checks', FILTER_DEFAULT, FILTER_FORCE_ARRAY );
-		$checks = is_null( $checks ) ? array() : $checks;
-		$plugin = filter_input( INPUT_POST, 'plugin', FILTER_SANITIZE_FULL_SPECIAL_CHARS );
+		$checks = filter_input(INPUT_POST, 'checks', FILTER_DEFAULT, FILTER_FORCE_ARRAY);
+		$checks = is_null($checks) ? array() : $checks;
+		$plugin = filter_input(INPUT_POST, 'plugin', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+		$debug = filter_input(INPUT_POST, 'debug', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
 
 		try {
-			$runner->set_check_slugs( $checks );
-			$runner->set_plugin( $plugin );
+			$runner->set_check_slugs($checks);
+			$runner->set_plugin($plugin);
+			$runner->set_debug($debug);
 			$results = $runner->run();
-		} catch ( Exception $error ) {
+		} catch (Exception $error) {
 			wp_send_json_error(
-				new WP_Error( 'invalid-request', $error->getMessage() ),
+				new WP_Error('invalid-request', $error->getMessage()),
 				400
 			);
 		}
 
 		wp_send_json_success(
 			array(
-				'message'  => __( 'Checks run successfully', 'plugin-check' ),
+				'message'  => __('Checks run successfully', 'plugin-check'),
 				'errors'   => $results->get_errors(),
 				'warnings' => $results->get_warnings(),
 			)
@@ -294,13 +306,14 @@ final class Admin_AJAX {
 	 * @param string $nonce The request nonce passed.
 	 * @return bool|WP_Error True if the nonce is valid. WP_Error if invalid.
 	 */
-	private function verify_request( $nonce ) {
-		if ( ! wp_verify_nonce( $nonce, self::NONCE_KEY ) ) {
-			return new WP_Error( 'invalid-nonce', __( 'Invalid nonce', 'plugin-check' ) );
+	private function verify_request($nonce)
+	{
+		if (! wp_verify_nonce($nonce, self::NONCE_KEY)) {
+			return new WP_Error('invalid-nonce', __('Invalid nonce', 'plugin-check'));
 		}
 
-		if ( ! current_user_can( 'activate_plugins' ) ) {
-			return new WP_Error( 'invalid-permissions', __( 'Invalid user permissions, you are not allowed to perform this request.', 'plugin-check' ) );
+		if (! current_user_can('activate_plugins')) {
+			return new WP_Error('invalid-permissions', __('Invalid user permissions, you are not allowed to perform this request.', 'plugin-check'));
 		}
 
 		return true;
@@ -314,9 +327,10 @@ final class Admin_AJAX {
 	 * @param array $checks An array of Check instances.
 	 * @return bool True if a Runtime_Check exists in the array, false if not.
 	 */
-	private function has_runtime_check( array $checks ) {
-		foreach ( $checks as $check ) {
-			if ( $check instanceof Runtime_Check ) {
+	private function has_runtime_check(array $checks)
+	{
+		foreach ($checks as $check) {
+			if ($check instanceof Runtime_Check) {
 				return true;
 			}
 		}

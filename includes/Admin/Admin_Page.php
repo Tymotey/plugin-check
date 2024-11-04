@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Class WordPress\Plugin_Check\Admin\Admin_Page
  *
@@ -19,7 +20,8 @@ use WordPress\Plugin_Check\Checker\Default_Check_Repository;
  *
  * @SuppressWarnings(PHPMD.TooManyPublicMethods)
  */
-final class Admin_Page {
+final class Admin_Page
+{
 
 	/**
 	 * Admin AJAX class instance.
@@ -44,7 +46,8 @@ final class Admin_Page {
 	 *
 	 * @param Admin_AJAX $admin_ajax Instance of Admin_AJAX.
 	 */
-	public function __construct( Admin_AJAX $admin_ajax ) {
+	public function __construct(Admin_AJAX $admin_ajax)
+	{
 		$this->admin_ajax = $admin_ajax;
 	}
 
@@ -53,10 +56,11 @@ final class Admin_Page {
 	 *
 	 * @since 1.0.0
 	 */
-	public function add_hooks() {
-		add_action( 'admin_menu', array( $this, 'add_and_initialize_page' ) );
-		add_filter( 'plugin_action_links', array( $this, 'filter_plugin_action_links' ), 10, 4 );
-		add_action( 'admin_enqueue_scripts', array( $this, 'add_jump_to_line_code_editor' ) );
+	public function add_hooks()
+	{
+		add_action('admin_menu', array($this, 'add_and_initialize_page'));
+		add_filter('plugin_action_links', array($this, 'filter_plugin_action_links'), 10, 4);
+		add_action('admin_enqueue_scripts', array($this, 'add_jump_to_line_code_editor'));
 
 		$this->admin_ajax->add_hooks();
 	}
@@ -66,13 +70,14 @@ final class Admin_Page {
 	 *
 	 * @since 1.0.0
 	 */
-	public function add_page() {
+	public function add_page()
+	{
 		$this->hook_suffix = add_management_page(
-			__( 'Plugin Check', 'plugin-check' ),
-			__( 'Plugin Check', 'plugin-check' ),
+			__('Plugin Check', 'plugin-check'),
+			__('Plugin Check', 'plugin-check'),
 			'activate_plugins',
 			'plugin-check',
-			array( $this, 'render_page' )
+			array($this, 'render_page')
 		);
 	}
 
@@ -81,9 +86,10 @@ final class Admin_Page {
 	 *
 	 * @since 1.0.0
 	 */
-	public function add_and_initialize_page() {
+	public function add_and_initialize_page()
+	{
 		$this->add_page();
-		add_action( 'load-' . $this->get_hook_suffix(), array( $this, 'initialize_page' ) );
+		add_action('load-' . $this->get_hook_suffix(), array($this, 'initialize_page'));
 	}
 
 	/**
@@ -91,9 +97,10 @@ final class Admin_Page {
 	 *
 	 * @since 1.0.0
 	 */
-	public function initialize_page() {
-		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
-		add_action( 'admin_footer', array( $this, 'admin_footer' ) );
+	public function initialize_page()
+	{
+		add_action('admin_enqueue_scripts', array($this, 'enqueue_scripts'));
+		add_action('admin_footer', array($this, 'admin_footer'));
 
 		$this->add_help_tab();
 	}
@@ -103,19 +110,20 @@ final class Admin_Page {
 	 *
 	 * @since 1.1.0
 	 */
-	public function add_help_tab() {
+	public function add_help_tab()
+	{
 		$screen = get_current_screen();
 
-		if ( ! $screen ) {
+		if (! $screen) {
 			return;
 		}
 
 		$screen->add_help_tab(
 			array(
 				'id'       => 'plugin-check',
-				'title'    => __( 'Checks', 'plugin-check' ),
+				'title'    => __('Checks', 'plugin-check'),
 				'content'  => '',
-				'callback' => array( $this, 'render_help_tab' ),
+				'callback' => array($this, 'render_help_tab'),
 			)
 		);
 	}
@@ -125,11 +133,12 @@ final class Admin_Page {
 	 *
 	 * @since 1.1.0
 	 */
-	public function render_help_tab() {
+	public function render_help_tab()
+	{
 		$check_repo = new Default_Check_Repository();
-		$collection = $check_repo->get_checks( Check_Repository::TYPE_ALL );
+		$collection = $check_repo->get_checks(Check_Repository::TYPE_ALL);
 
-		if ( empty( $collection ) ) {
+		if (empty($collection)) {
 			return;
 		}
 
@@ -142,27 +151,27 @@ final class Admin_Page {
 		 *
 		 * @var Check $check
 		 */
-		foreach ( $collection as $key => $check ) {
+		foreach ($collection as $key => $check) {
 			$categories = array_map(
-				static function ( $category ) use ( $category_labels ) {
-					return $category_labels[ $category ] ?? $category;
+				static function ($category) use ($category_labels) {
+					return $category_labels[$category] ?? $category;
 				},
 				$check->get_categories()
 			);
-			$categories = join( ', ', $categories );
-			?>
+			$categories = join(', ', $categories);
+?>
 			<dt>
-				<code><?php echo esc_html( $key ); ?></code>
-				(<?php echo esc_html( $categories ); ?>)
+				<code><?php echo esc_html($key); ?></code>
+				(<?php echo esc_html($categories); ?>)
 			</dt>
 			<dd>
-				<?php echo wp_kses( $check->get_description(), array( 'code' => array() ) ); ?>
+				<?php echo wp_kses($check->get_description(), array('code' => array())); ?>
 				<br>
-				<a href="<?php echo esc_url( $check->get_documentation_url() ); ?>">
-					<?php esc_html_e( 'Learn more', 'plugin-check' ); ?>
+				<a href="<?php echo esc_url($check->get_documentation_url()); ?>">
+					<?php esc_html_e('Learn more', 'plugin-check'); ?>
 				</a>
 			</dd>
-			<?php
+		<?php
 		}
 
 		echo '</dl>';
@@ -173,14 +182,15 @@ final class Admin_Page {
 	 *
 	 * @since 1.0.0
 	 */
-	public function enqueue_scripts() {
+	public function enqueue_scripts()
+	{
 		wp_enqueue_script(
 			'plugin-check-admin',
 			WP_PLUGIN_CHECK_PLUGIN_DIR_URL . 'assets/js/plugin-check-admin.js',
 			array(
 				'wp-util',
 			),
-			WP_PLUGIN_CHECK_VERSION,
+			random_int(1, 10000), //WP_PLUGIN_CHECK_VERSION,
 			true
 		);
 
@@ -200,8 +210,8 @@ final class Admin_Page {
 					'actionSetUpRuntimeEnvironment'   => Admin_AJAX::ACTION_SET_UP_ENVIRONMENT,
 					'actionRunChecks'                 => Admin_AJAX::ACTION_RUN_CHECKS,
 					'actionCleanUpRuntimeEnvironment' => Admin_AJAX::ACTION_CLEAN_UP_ENVIRONMENT,
-					'successMessage'                  => __( 'No errors found.', 'plugin-check' ),
-					'errorMessage'                    => __( 'Errors were found.', 'plugin-check' ),
+					'successMessage'                  => __('No errors found.', 'plugin-check'),
+					'errorMessage'                    => __('Errors were found.', 'plugin-check'),
 				)
 			),
 			'before'
@@ -215,13 +225,14 @@ final class Admin_Page {
 	 *
 	 * @param string $hook_suffix The current admin page.
 	 */
-	public function add_jump_to_line_code_editor( $hook_suffix ) {
-		if ( 'plugin-editor.php' !== $hook_suffix ) {
+	public function add_jump_to_line_code_editor($hook_suffix)
+	{
+		if ('plugin-editor.php' !== $hook_suffix) {
 			return;
 		}
 
-		$line = (int) ( $_GET['line'] ?? 0 );
-		if ( ! $line ) {
+		$line = (int) ($_GET['line'] ?? 0);
+		if (! $line) {
 			return;
 		}
 
@@ -238,7 +249,7 @@ final class Admin_Page {
 						}
 					)( wp.themePluginEditor.initCodeEditor );
 				',
-				wp_json_encode( $line )
+				wp_json_encode($line)
 			)
 		);
 	}
@@ -250,17 +261,18 @@ final class Admin_Page {
 	 *
 	 * @return array List of available plugins.
 	 */
-	private function get_available_plugins() {
+	private function get_available_plugins()
+	{
 		$available_plugins = get_plugins();
 
-		if ( empty( $available_plugins ) ) {
+		if (empty($available_plugins)) {
 			return array();
 		}
 
-		$plugin_check_base_name = plugin_basename( WP_PLUGIN_CHECK_MAIN_FILE );
+		$plugin_check_base_name = plugin_basename(WP_PLUGIN_CHECK_MAIN_FILE);
 
-		if ( isset( $available_plugins[ $plugin_check_base_name ] ) ) {
-			unset( $available_plugins[ $plugin_check_base_name ] );
+		if (isset($available_plugins[$plugin_check_base_name])) {
+			unset($available_plugins[$plugin_check_base_name]);
 		}
 
 		return $available_plugins;
@@ -273,16 +285,19 @@ final class Admin_Page {
 	 *
 	 * @SuppressWarnings(PHPMD.UnusedLocalVariable)
 	 */
-	public function render_page() {
+	public function render_page()
+	{
 		$available_plugins = $this->get_available_plugins();
 
-		$selected_plugin_basename = filter_input( INPUT_GET, 'plugin', FILTER_SANITIZE_FULL_SPECIAL_CHARS );
+		$selected_plugin_basename = filter_input(INPUT_GET, 'plugin', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
 
 		$categories = Check_Categories::get_categories();
 
 		// Get user settings for category preferences.
-		$user_enabled_categories = get_user_setting( 'plugin_check_category_preferences', implode( '__', $this->get_default_check_categories_to_be_selected() ) );
-		$user_enabled_categories = explode( '__', $user_enabled_categories );
+		$user_enabled_categories = get_user_setting('plugin_check_category_preferences', implode('__', $this->get_default_check_categories_to_be_selected()));
+		$user_enabled_categories = explode('__', $user_enabled_categories);
+
+		$user_enabled_debug = get_user_setting('plugin_check_debug',  $this->get_default_check_debug_status());
 
 		require WP_PLUGIN_CHECK_PLUGIN_DIR_PATH . 'templates/admin-page.php';
 	}
@@ -300,18 +315,19 @@ final class Admin_Page {
 	 *                            'mustuse', 'dropins', and 'search'.
 	 * @return array The modified list of actions.
 	 */
-	public function filter_plugin_action_links( $actions, $plugin_file, $plugin_data, $context ) {
+	public function filter_plugin_action_links($actions, $plugin_file, $plugin_data, $context)
+	{
 
-		$plugin_check_base_name = plugin_basename( WP_PLUGIN_CHECK_MAIN_FILE );
-		if ( in_array( $context, array( 'mustuse', 'dropins' ), true ) || $plugin_check_base_name === $plugin_file ) {
+		$plugin_check_base_name = plugin_basename(WP_PLUGIN_CHECK_MAIN_FILE);
+		if (in_array($context, array('mustuse', 'dropins'), true) || $plugin_check_base_name === $plugin_file) {
 			return $actions;
 		}
 
-		if ( current_user_can( 'activate_plugins' ) ) {
+		if (current_user_can('activate_plugins')) {
 			$actions[] = sprintf(
 				'<a href="%1$s">%2$s</a>',
-				esc_url( admin_url( "tools.php?page=plugin-check&plugin={$plugin_file}" ) ),
-				esc_html__( 'Check this plugin', 'plugin-check' )
+				esc_url(admin_url("tools.php?page=plugin-check&plugin={$plugin_file}")),
+				esc_html__('Check this plugin', 'plugin-check')
 			);
 		}
 
@@ -323,7 +339,8 @@ final class Admin_Page {
 	 *
 	 * @since 1.0.0
 	 */
-	public function admin_footer() {
+	public function admin_footer()
+	{
 		ob_start();
 		require WP_PLUGIN_CHECK_PLUGIN_DIR_PATH . 'templates/results-table.php';
 		$results_table_template = ob_get_clean();
@@ -359,19 +376,21 @@ final class Admin_Page {
 		?>
 		<style>
 			#plugin-check__results .notice,
-			#plugin-check__results .notice + h4 {
+			#plugin-check__results .notice+h4 {
 				margin-top: 20px;
 			}
+
 			#plugin-check__results h4:first-child {
 				margin-top: 80.5px;
 			}
-			@media ( max-width: 782px ) {
+
+			@media (max-width: 782px) {
 				#plugin-check__results h4:first-child {
 					margin-top: 88.5px;
 				}
 			}
 		</style>
-		<?php
+<?php
 	}
 
 	/**
@@ -381,7 +400,8 @@ final class Admin_Page {
 	 *
 	 * @return string Hook suffix, or empty string if admin page was not added.
 	 */
-	public function get_hook_suffix() {
+	public function get_hook_suffix()
+	{
 		return $this->hook_suffix;
 	}
 
@@ -392,7 +412,8 @@ final class Admin_Page {
 	 *
 	 * @return string[] An array of category slugs.
 	 */
-	private function get_default_check_categories_to_be_selected() {
+	private function get_default_check_categories_to_be_selected()
+	{
 		$default_check_categories = array(
 			'plugin_repo',
 		);
@@ -404,8 +425,31 @@ final class Admin_Page {
 		 *
 		 * @param string[] $default_check_categories An array of category slugs.
 		 */
-		$default_categories = (array) apply_filters( 'wp_plugin_check_default_categories', $default_check_categories );
+		$default_categories = (array) apply_filters('wp_plugin_check_default_categories', $default_check_categories);
 
 		return $default_categories;
+	}
+
+	/**
+	 * Gets default check categories to be selected.
+	 *
+	 * @since 1.0.2 
+	 *
+	 * @return string[] An array of category slugs.
+	 */
+	private function get_default_check_debug_status()
+	{
+		$default_check_debug = 'false';
+
+		/**
+		 * Filters the default check debug to be selected.
+		 *
+		 * @since 1.0.2 //TODO: correct version
+		 *
+		 * @param string $default_check_debug Value of default state(true/false).
+		 */
+		$default_debug = apply_filters('wp_plugin_check_default_debug', $default_check_debug);
+
+		return $default_debug;
 	}
 }

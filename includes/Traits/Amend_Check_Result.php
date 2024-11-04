@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Trait WordPress\Plugin_Check\Traits\Amend_Check_Result
  *
@@ -14,7 +15,8 @@ use WordPress\Plugin_Check\Checker\Check_Result;
  *
  * @since 1.0.0
  */
-trait Amend_Check_Result {
+trait Amend_Check_Result
+{
 
 	use File_Editor_URL;
 
@@ -33,17 +35,17 @@ trait Amend_Check_Result {
 	 * @param string       $docs     URL for further information about the message.
 	 * @param int          $severity Severity level. Default is 5.
 	 */
-	protected function add_result_message_for_file( Check_Result $result, $error, $message, $code, $file, $line = 0, $column = 0, string $docs = '', $severity = 5 ) {
-
+	protected function add_result_message_for_file(Check_Result $result, $error, $message, $code, $file, $line = 0, $column = 0, string $docs = '', $severity = 5)
+	{
 		$result->add_message(
 			(bool) $error,
 			$message,
 			array(
 				'code'     => $code,
-				'file'     => str_replace( $result->plugin()->path(), '', $file ),
+				'file'     => str_replace($result->plugin()->path(), '', $file),
 				'line'     => $line,
 				'column'   => $column,
-				'link'     => $this->get_file_editor_url( $result, $file, $line ),
+				'link'     => $this->get_file_editor_url($result, $file, $line),
 				'docs'     => $docs,
 				'severity' => $severity,
 			)
@@ -64,8 +66,9 @@ trait Amend_Check_Result {
 	 * @param string       $docs     URL for further information about the message.
 	 * @param int          $severity Severity level. Default is 5.
 	 */
-	protected function add_result_error_for_file( Check_Result $result, $message, $code, $file, $line = 0, $column = 0, string $docs = '', $severity = 5 ) {
-		$this->add_result_message_for_file( $result, true, $message, $code, $file, $line, $column, $docs, $severity );
+	protected function add_result_error_for_file(Check_Result $result, $message, $code, $file, $line = 0, $column = 0, string $docs = '', $severity = 5)
+	{
+		$this->add_result_message_for_file($result, true, $message, $code, $file, $line, $column, $docs, $severity);
 	}
 
 	/**
@@ -82,7 +85,8 @@ trait Amend_Check_Result {
 	 * @param string       $docs     URL for further information about the message.
 	 * @param int          $severity Severity level. Default is 5.
 	 */
-	protected function add_result_warning_for_file( Check_Result $result, $message, $code, $file, $line = 0, $column = 0, string $docs = '', $severity = 5 ) {
-		$this->add_result_message_for_file( $result, false, $message, $code, $file, $line, $column, $docs, $severity );
+	protected function add_result_warning_for_file(Check_Result $result, $message, $code, $file, $line = 0, $column = 0, string $docs = '', $severity = 5)
+	{
+		$this->add_result_message_for_file($result, false, $message, $code, $file, $line, $column, $docs, $severity);
 	}
 }

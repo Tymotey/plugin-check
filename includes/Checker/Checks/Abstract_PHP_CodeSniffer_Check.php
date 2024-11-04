@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Class WordPress\Plugin_Check\Checker\Checks\Abstract_PHP_CodeSniffer_Check
  *
@@ -8,7 +9,6 @@
 namespace WordPress\Plugin_Check\Checker\Checks;
 
 use Exception;
-use PHP_CodeSniffer\Config;
 use PHP_CodeSniffer\Runner;
 use WordPress\Plugin_Check\Checker\Check_Result;
 use WordPress\Plugin_Check\Checker\Static_Check;
@@ -20,7 +20,8 @@ use WordPress\Plugin_Check\Utilities\Plugin_Request_Utility;
  *
  * @since 1.0.0
  */
-abstract class Abstract_PHP_CodeSniffer_Check implements Static_Check {
+abstract class Abstract_PHP_CodeSniffer_Check implements Static_Check
+{
 
 	use Amend_Check_Result;
 
@@ -53,12 +54,10 @@ abstract class Abstract_PHP_CodeSniffer_Check implements Static_Check {
 	 *    @type string $exclude    A comma separated list of sniff codes to exclude from checks.
 	 * }
 	 */
-	abstract protected function get_args( Check_Result $result );
+	abstract protected function get_args(Check_Result $result);
 
 	/**
 	 * Amends the given result by running the check on the associated plugin.
-	 *
-	 * @SuppressWarnings(PHPMD.NPathComplexity)
 	 *
 	 * @since 1.0.0
 	 *
@@ -67,47 +66,32 @@ abstract class Abstract_PHP_CodeSniffer_Check implements Static_Check {
 	 * @throws Exception Thrown when the check fails with a critical error (unrelated to any errors detected as part of
 	 *                   the check).
 	 */
-	final public function run( Check_Result $result ) {
+	final public function run(Check_Result $result)
+	{
 		// Include the PHPCS autoloader.
 		$autoloader = WP_PLUGIN_CHECK_PLUGIN_DIR_PATH . 'vendor/squizlabs/php_codesniffer/autoload.php';
 
-		if ( file_exists( $autoloader ) ) {
+		if (file_exists($autoloader)) {
 			include_once $autoloader;
 		}
 
-		if ( ! class_exists( Runner::class ) ) {
+		if (! class_exists('\PHP_CodeSniffer\Runner')) {
 			throw new Exception(
-				__( 'Unable to find PHPCS Runner class.', 'plugin-check' )
-			);
-		}
-
-		if ( ! class_exists( Config::class ) ) {
-			throw new Exception(
-				__( 'Unable to find PHPCS Config class.', 'plugin-check' )
+				__('Unable to find PHPCS Runner class.', 'plugin-check')
 			);
 		}
 
 		// Backup the original command line arguments.
 		$orig_cmd_args = $_SERVER['argv'] ?? '';
 
-		$args = $this->get_args( $result );
+		// Create the default arguments for PHPCS.
+		$defaults = $this->get_argv_defaults($result);
+
+		// Set the check arguments for PHPCS.
+		$_SERVER['argv'] = $this->parse_argv($this->get_args($result), $defaults);
 
 		// Reset PHP_CodeSniffer config.
 		$this->reset_php_codesniffer_config();
-
-		// Get current installed_paths config.
-		$installed_paths = Config::getConfigData( 'installed_paths' );
-
-		// Override installed_paths to load custom sniffs.
-		if ( isset( $args['installed_paths'] ) && is_array( $args['installed_paths'] ) ) {
-			Config::setConfigData( 'installed_paths', implode( ',', $args['installed_paths'] ) );
-		}
-
-		// Create the default arguments for PHPCS.
-		$defaults = $this->get_argv_defaults( $result );
-
-		// Set the check arguments for PHPCS.
-		$_SERVER['argv'] = $this->parse_argv( $args, $defaults );
 
 		// Run PHPCS.
 		try {
@@ -115,33 +99,33 @@ abstract class Abstract_PHP_CodeSniffer_Check implements Static_Check {
 			$runner = new Runner();
 			$runner->runPHPCS();
 			$reports = ob_get_clean();
-		} catch ( Exception $e ) {
+		} catch (Exception $e) {
 			$_SERVER['argv'] = $orig_cmd_args;
 			throw $e;
 		}
-
-		// Reset installed_paths.
-		Config::setConfigData( 'installed_paths', $installed_paths );
 
 		// Restore original arguments.
 		$_SERVER['argv'] = $orig_cmd_args;
 
 		// Parse the reports into data to add to the overall $result.
-		$reports = json_decode( trim( $reports ), true );
+		$reports = json_decode(trim($reports), true);
 
-		if ( empty( $reports['files'] ) ) {
+		if (empty($reports['files'])) {
 			return;
 		}
 
-		foreach ( $reports['files'] as $file_name => $file_results ) {
-			if ( empty( $file_results['messages'] ) ) {
+		$context = $result->plugin();
+		$context->debug->write_debug_file('PHPCS Results');
+		foreach ($reports['files'] as $file_name => $file_results) {
+			$context->debug->write_debug_file(count($file_results['messages']) . ' error(s) on file: ' . $file_name);
+			if (empty($file_results['messages'])) {
 				continue;
 			}
 
-			foreach ( $file_results['messages'] as $file_message ) {
+			foreach ($file_results['messages'] as $file_message) {
 				$this->add_result_message_for_file(
 					$result,
-					strtoupper( $file_message['type'] ) === 'ERROR',
+					strtoupper($file_message['type']) === 'ERROR',
 					$file_message['message'],
 					$file_message['source'],
 					$file_name,
@@ -152,6 +136,7 @@ abstract class Abstract_PHP_CodeSniffer_Check implements Static_Check {
 				);
 			}
 		}
+		$context->debug->write_debug_file("\n");
 	}
 
 	/**
@@ -163,16 +148,17 @@ abstract class Abstract_PHP_CodeSniffer_Check implements Static_Check {
 	 * @param array $defaults An array of default arguments.
 	 * @return array An indexed array of PHPCS CLI arguments.
 	 */
-	private function parse_argv( $argv, $defaults ) {
+	private function parse_argv($argv, $defaults)
+	{
 		// Only accept allowed PHPCS arguments from check arguments array.
-		$check_args = array_intersect_key( $argv, $this->allowed_args );
+		$check_args = array_intersect_key($argv, $this->allowed_args);
 
 		// Format check arguments for PHPCS.
-		foreach ( $check_args as $key => $value ) {
-			if ( 'runtime-set' === $key ) {
-				if ( is_array( $value ) ) {
-					foreach ( $value as $item_key => $item_value ) {
-						$defaults = array_merge( $defaults, array( "--{$key}", $item_key, $item_value ) );
+		foreach ($check_args as $key => $value) {
+			if ('runtime-set' === $key) {
+				if (is_array($value)) {
+					foreach ($value as $item_key => $item_value) {
+						$defaults = array_merge($defaults, array("--{$key}", $item_key, $item_value));
 					}
 				}
 			} else {
@@ -191,7 +177,8 @@ abstract class Abstract_PHP_CodeSniffer_Check implements Static_Check {
 	 * @param Check_Result $result The check result to amend, including the plugin context to check.
 	 * @return array An indexed array of PHPCS CLI arguments.
 	 */
-	private function get_argv_defaults( Check_Result $result ): array {
+	private function get_argv_defaults(Check_Result $result): array
+	{
 		$defaults = array(
 			'',
 			$result->plugin()->location(),
@@ -205,21 +192,21 @@ abstract class Abstract_PHP_CodeSniffer_Check implements Static_Check {
 		$files_to_ignore       = Plugin_Request_Utility::get_files_to_ignore();
 
 		// Ignore directories.
-		if ( ! empty( $directories_to_ignore ) ) {
-			$ignore_patterns[] = '*/' . implode( '/*,*/', $directories_to_ignore ) . '/*';
+		if (! empty($directories_to_ignore)) {
+			$ignore_patterns[] = '*/' . implode('/*,*/', $directories_to_ignore) . '/*';
 		}
 
 		// Ignore files.
-		if ( ! empty( $files_to_ignore ) ) {
-			$ignore_patterns[] = '/' . implode( ',/', $files_to_ignore );
+		if (! empty($files_to_ignore)) {
+			$ignore_patterns[] = '/' . implode(',/', $files_to_ignore);
 		}
 
-		if ( ! empty( $ignore_patterns ) ) {
-			$defaults[] = '--ignore=' . implode( ',', $ignore_patterns );
+		if (! empty($ignore_patterns)) {
+			$defaults[] = '--ignore=' . implode(',', $ignore_patterns);
 		}
 
 		// Set the Minimum WP version supported for the plugin.
-		if ( $result->plugin()->minimum_supported_wp() ) {
+		if ($result->plugin()->minimum_supported_wp()) {
 			// Due to the syntax of runtime-set, these must be passed as individual args.
 			$defaults[] = '--runtime-set';
 			$defaults[] = 'minimum_wp_version';
@@ -235,19 +222,20 @@ abstract class Abstract_PHP_CodeSniffer_Check implements Static_Check {
 	 *
 	 * @since 1.0.0
 	 */
-	private function reset_php_codesniffer_config() {
-		if ( class_exists( Config::class ) ) {
+	private function reset_php_codesniffer_config()
+	{
+		if (class_exists('\PHP_CodeSniffer\Config')) {
 			/*
 			 * PHPStan ignore reason: PHPStan raised an issue because we can't
 			 * use class in ReflectionClass.
 			 *
 			 * @phpstan-ignore-next-line
 			 */
-			$reflected_phpcs_config = new \ReflectionClass( Config::class );
-			$overridden_defaults    = $reflected_phpcs_config->getProperty( 'overriddenDefaults' );
-			$overridden_defaults->setAccessible( true );
-			$overridden_defaults->setValue( $reflected_phpcs_config, array() );
-			$overridden_defaults->setAccessible( false );
+			$reflected_phpcs_config = new \ReflectionClass('\PHP_CodeSniffer\Config');
+			$overridden_defaults    = $reflected_phpcs_config->getProperty('overriddenDefaults');
+			$overridden_defaults->setAccessible(true);
+			$overridden_defaults->setValue($reflected_phpcs_config, array());
+			$overridden_defaults->setAccessible(false);
 		}
 	}
 }

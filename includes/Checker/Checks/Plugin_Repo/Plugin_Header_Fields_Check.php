@@ -70,8 +70,12 @@ class Plugin_Header_Fields_Check implements Static_Check {
 		);
 
 		$restricted_labels = array(
-			'RestrictedLabel' => 'Restricted Label',
-		); // Reserved for future use.
+			'BitbucketPluginURI' => 'Bitbucket Plugin URI',
+			'GistPluginURI'      => 'Gist Plugin URI',
+			'GiteaPluginURI'     => 'Gitea Plugin URI',
+			'GitHubPluginURI'    => 'GitHub Plugin URI',
+			'GitLabPluginURI'    => 'GitLab Plugin URI',
+		);
 
 		$plugin_header = $this->get_plugin_data( $plugin_main_file, array_merge( $labels, $restricted_labels ) );
 

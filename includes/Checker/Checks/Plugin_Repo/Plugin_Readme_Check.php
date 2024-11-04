@@ -61,9 +61,9 @@ class Plugin_Readme_Check extends Abstract_File_Check {
 		// Filter the readme files.
 		$readme = $this->filter_files_for_readme( $files, $plugin_relative_path );
 
-		// If the readme file does not exist, add an error and skip other tests.
+		// If the readme file does not exist, add a warning and skip other tests.
 		if ( empty( $readme ) ) {
-			$this->add_result_error_for_file(
+			$this->add_result_warning_for_file(
 				$result,
 				__( 'The plugin readme.txt does not exist.', 'plugin-check' ),
 				'no_plugin_readme',
@@ -277,7 +277,7 @@ class Plugin_Readme_Check extends Abstract_File_Check {
 			|| str_contains( $short_description, 'Here is a short description of the plugin.' )
 			|| str_contains( $donate_link, '//example.com/' )
 		) {
-			$this->add_result_error_for_file(
+			$this->add_result_warning_for_file(
 				$result,
 				__( '<strong>The readme appears to contain default text.</strong><br>This means your readme has to have headers as well as a proper description and documentation as to how it works and how one can use it.', 'plugin-check' ),
 				'default_readme_text',
@@ -354,7 +354,7 @@ class Plugin_Readme_Check extends Abstract_File_Check {
 		}
 
 		// Checks for a valid license in Plugin Header.
-		if ( ! empty( $plugin_license ) && ! preg_match( '/GPL|GNU|MIT|FreeBSD|New BSD|BSD-3-Clause|BSD 3 Clause|OpenLDAP|Expat|Apache|MPL20/im', $plugin_license ) ) {
+		if ( ! empty( $plugin_license ) && ! preg_match( '/GPL|GNU|MIT|FreeBSD|New BSD|BSD-3-Clause|BSD 3 Clause|OpenLDAP|Expat/im', $plugin_license ) ) {
 			$this->add_result_error_for_file(
 				$result,
 				__( '<strong>Your plugin has an invalid license declared in Plugin Header.</strong><br>Please update your readme with a valid GPL license identifier. It is necessary to declare the license of this plugin. You can do this by using the fields available both in the plugin readme and in the plugin headers.', 'plugin-check' ),
